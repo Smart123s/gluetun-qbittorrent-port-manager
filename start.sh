@@ -13,9 +13,11 @@ update_port () {
 
 while true; do
   if [ -f $PORT_FORWARDED ]; then
-    update_port
-    inotifywait -mq -e close_write $PORT_FORWARDED | while read change; do
+    # inotifywait is broken on my Asustor NAS
+    # inotifywait -mq -e close_write $PORT_FORWARDED | while read change; do
+    while true; do
       update_port
+      sleep 30
     done
   else
     echo "Couldn't find file $PORT_FORWARDED"
