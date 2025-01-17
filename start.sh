@@ -1,5 +1,9 @@
 #!/bin/bash
 
+echo "Starting qBittorrent port manager..."
+echo "Server: ${HTTP_S}://${QBITTORRENT_SERVER}:${QBITTORRENT_PORT}"
+echo "User: ${QBITTORRENT_USER}"
+
 COOKIES="/tmp/cookies.txt"
 
 update_port() {
