@@ -21,6 +21,7 @@ update_port() {
 
     if [[ "$PREF_STATUS" == "200" ]]; then
       echo "Successfully updated qBittorrent to port $PORT"
+      CURRENT_PORT="$PORT"
     else
       echo "Error updating preferences. Status code: $PREF_STATUS"
     fi
@@ -32,14 +33,19 @@ update_port() {
   rm -f "$COOKIES"
 }
 
+LAST_PORT=""
 while true; do
-  if [ -f $PORT_FORWARDED ]; then
+  if [ -f "$PORT_FORWARDED" ]; then
     # inotifywait is broken on my Asustor NAS
     # inotifywait -mq -e close_write $PORT_FORWARDED | while read change; do
-    while true; do
+    NEW_PORT=$(cat "$PORT_FORWARDED" 2>/dev/null || echo "") # Handle read errors
+    if [[ "$NEW_PORT" != "$LAST_PORT" ]]; then
       update_port
-      sleep 30
-    done
+      # Only update LAST_PORT if update_port was successful (CURRENT_PORT was updated)
+      if [[ "$CURRENT_PORT" != "" ]]; then
+          LAST_PORT="$CURRENT_PORT"
+      fi
+    fi
   else
     echo "Couldn't find file $PORT_FORWARDED"
     echo "Trying again in 10 seconds"
