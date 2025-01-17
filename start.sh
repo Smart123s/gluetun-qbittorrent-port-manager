@@ -2,13 +2,30 @@
 
 COOKIES="/tmp/cookies.txt"
 
-update_port () {
-  PORT=$(cat $PORT_FORWARDED)
-  rm -f $COOKIES
-  curl -s -c $COOKIES --data "username=$QBITTORRENT_USER&password=$QBITTORRENT_PASS" ${HTTP_S}://${QBITTORRENT_SERVER}:${QBITTORRENT_PORT}/api/v2/auth/login > /dev/null
-  curl -s -b $COOKIES --data 'json={"listen_port": "'"$PORT"'"}' ${HTTP_S}://${QBITTORRENT_SERVER}:${QBITTORRENT_PORT}/api/v2/app/setPreferences > /dev/null
-  rm -f $COOKIES
-  echo "Successfully updated qbittorrent to port $PORT"
+update_port() {
+  local PORT=$(cat "$PORT_FORWARDED")
+  rm -f "$COOKIES"
+
+  # Login and check for success
+  LOGIN_RESPONSE=$(curl -s -c "$COOKIES" --data "username=$QBITTORRENT_USER&password=$QBITTORRENT_PASS" "${HTTP_S}://${QBITTORRENT_SERVER}:${QBITTORRENT_PORT}/api/v2/auth/login")
+
+  if [[ "$LOGIN_RESPONSE" == "Ok." ]]; then
+    echo "Login successful."
+
+    # Update preferences and check status code
+    PREF_STATUS=$(curl -s -o /dev/null -b "$COOKIES" -w "%{http_code}" --data 'json={"listen_port": "'"$PORT"'"}' "${HTTP_S}://${QBITTORRENT_SERVER}:${QBITTORRENT_PORT}/api/v2/app/setPreferences")
+
+    if [[ "$PREF_STATUS" == "200" ]]; then
+      echo "Successfully updated qBittorrent to port $PORT"
+    else
+      echo "Error updating preferences. Status code: $PREF_STATUS"
+    fi
+
+  else
+    echo "Login failed. Response: $LOGIN_RESPONSE"
+  fi
+
+  rm -f "$COOKIES"
 }
 
 while true; do
